@@ -7,7 +7,7 @@
     }
 
     @if (places()) {
-    <app-places [places]="places()!" />
+    <app-places [places]="places()!"  (selectPlace)="RemovePlace($event)"/>
     } @else if (places()?.length === 0) {
     <p class="fallback-text">Unfortunately, no Favoraite places could be found.</p>
     }

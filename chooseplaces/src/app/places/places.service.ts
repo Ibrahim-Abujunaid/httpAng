@@ -3,6 +3,7 @@ import { inject, Injectable, signal } from '@angular/core';
 
 import { Place } from './place.model';
 import { catchError, map, tap, throwError } from 'rxjs';
+import { ErrorService } from '../shared/error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,7 @@ import { catchError, map, tap, throwError } from 'rxjs';
 export class PlacesService {
   private userPlaces = signal<Place[]>([]);
   private httpClient = inject(HttpClient);
+  private error=inject(ErrorService)
 
   loadedUserPlaces = this.userPlaces.asReadonly();
 
@@ -37,13 +39,27 @@ export class PlacesService {
       })
       .pipe(
         catchError((error) => {
+          this.error.showError('there is some error')
           this.userPlaces.set(prevPlaces);
           return throwError(()=>new Error('Failed to access'));
         })
       );
   }
 
-  removeUserPlace(place: Place) {}
+  removeUserPlace(place: Place) {
+    const prevPlaces = this.userPlaces();
+    if (prevPlaces.some((p) => p.id === place.id)) {
+      this.userPlaces.set(prevPlaces.filter((p)=>p.id !==place.id));
+    }
+    return this.httpClient.delete('http://localhost:3000/user-places/'+place.id).pipe(
+      catchError((error) => {
+        this.error.showError('there is some error in remove item')
+        this.userPlaces.set(prevPlaces);
+        return throwError(()=>new Error('Failed to access'));
+      })
+    );
+
+  }
 
   private fetchPlaces(url: string) {
     return this.httpClient
